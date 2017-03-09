@@ -172,6 +172,10 @@ namespace ShopAtHome.UnitTestHelper
             return _targetConstructor.Invoke(_constructorParameters.ToArray()) as T;
         }
 
+        /// <summary>
+        /// Converts the builder into the underlying T
+        /// </summary>
+        /// <param name="builder"></param>
         public static implicit operator T(StubBuilder<T> builder)
         {
             return builder.Finish();

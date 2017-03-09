@@ -111,6 +111,15 @@ namespace ShopAtHome.UnitTestHelper
         }
 
         /// <summary>
+        /// Converts the builder into the underlying T
+        /// </summary>
+        /// <param name="builder"></param>
+        public static implicit operator T(TestDataBuilder<T> builder)
+        {
+            return builder.Finish();
+        }
+
+        /// <summary>
         /// Executes the provided action on the underlying T
         /// </summary>
         /// <param name="doThing"></param>
