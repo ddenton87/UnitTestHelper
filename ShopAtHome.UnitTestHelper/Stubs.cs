@@ -76,16 +76,14 @@ namespace ShopAtHome.UnitTestHelper
         {
             var tType = typeof(T);
             // TODO: Allow client to specify which constructor they want to use, if more than one valid constructor is defined
-            _targetConstructor =
-                tType.GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
-                    .FirstOrDefault(ci => ci.GetParameters()
-                    .Select(p => p.ParameterType)
-                    .All(pt => pt.IsInterface || pt.IsAbstract || pt.IsPrimitive || pt == typeof(string)));
+             var targetCtors = tType.GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+            // prefer constructors with parameters
+            _targetConstructor = targetCtors.Where(x => x.GetParameters().Length > 0).FirstOrDefault() ?? targetCtors.FirstOrDefault();
             if (_targetConstructor == null)
             {
                 // TODO: Need to be able to use constructors with concrete types, only throw if we can't auto-mock an un-filled dependency
                 // Probably means we need to pick a ctor to use at the end... Maybe take a page out of depedency injection container book
-                throw new InvalidOperationException($"Cannot construct type {tType.FullName} because it has no constructors for which all parameters can be mocked");
+                throw new InvalidOperationException($"Cannot construct type {tType.FullName} because it has no public constructors");
             }
             _constructorParameters = new List<object>();
             _filledParamTypes = new HashSet<Type>();
@@ -141,6 +139,10 @@ namespace ShopAtHome.UnitTestHelper
         public StubBuilder<T> FillGapsWithBareMocks()
         {
             var remainingParameters = _constructorParameterTypes.Where(p => !_filledParamTypes.Any(p.IsAssignableFrom));
+            if (!remainingParameters.All(pt => pt.IsInterface || pt.IsAbstract || pt.IsPrimitive || pt == typeof(string)))
+            {
+                throw new InvalidOperationException($"Cannot finish constructor for type {typeof(T).FullName} because the following remaining parameters cannot be mocked: {string.Join(", ", remainingParameters.Where(pt => !(pt.IsInterface || pt.IsAbstract || pt.IsPrimitive || pt == typeof(string))).Select(t => t.FullName))}");
+            }
             var mockMaker = typeof(Stubs).GetMethod(nameof(Stubs.BareMock), BindingFlags.Static | BindingFlags.Public);
 
             foreach (var parameterType in remainingParameters)

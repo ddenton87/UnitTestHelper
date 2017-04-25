@@ -41,6 +41,10 @@ namespace ShopAtHome.UnitTestHelpers.Tests
             public TestClass2(string p1, int p2) { }
         }
 
+        public class TestClass3
+        {
+            public TestClass3(TestClass tc, IMyInterface i) { }
+        }
 
 
         [TestMethod]
@@ -60,6 +64,14 @@ namespace ShopAtHome.UnitTestHelpers.Tests
         public void CanCreateInstanceWithDefaultMockedDependencies()
         {
             var result = Stubs.CreateWithBareMocks<TestClass>();
+            result.Should().NotBeNull("Object instantiation should have occurred.");
+        }
+
+        [TestMethod]
+        public void CanCreateInstanceWithSpecifiedConcreteDependencyAndDefaultMockedDependencies()
+        {
+            var dependency = Stubs.CreateWithBareMocks<TestClass>();
+            var result = Stubs.Build<TestClass3>().With(dependency).FillGapsWithBareMocks().Finish();
             result.Should().NotBeNull("Object instantiation should have occurred.");
         }
 
