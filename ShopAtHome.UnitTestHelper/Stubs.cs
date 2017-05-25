@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Telerik.JustMock;
 
 namespace ShopAtHome.UnitTestHelper
 {
@@ -12,17 +11,25 @@ namespace ShopAtHome.UnitTestHelper
     public class Stubs
     {
         /// <summary>
+        /// The mocker used to generate mocked dependencies or objects
+        /// This library ships with mockers for Telerik's JustMock (used by default) and Moq (MoqMocker).
+        /// You can set this property to either of those, or your own implementation, to ensure that the library deals in mocks that are consistent with your own stack
+        /// </summary>
+        public static IMockCreator Mocker { private get; set; }
+
+        static Stubs() => Mocker = new JustMockMocker();
+
+        /// <summary>
         /// Returns an empty mock implementation of T with no behavior.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static T BareMock<T>()
+        public static T BareMock<T>() where T : class
         {
-            var tType = typeof (T);
-            return tType.IsPrimitive || tType == typeof(string) ? (T)GetPrimitiveDefault(tType) : Mock.Create<T>();
+            return typeof(T) == typeof(string) ? (T)GetPrimitiveDefault(typeof(string)) : Mocker.Create<T>();
         }
 
-        private static object GetPrimitiveDefault(Type primitiveType)
+        internal static object GetPrimitiveDefault(Type primitiveType)
         {
             if (primitiveType == typeof (string))
             {
@@ -81,8 +88,6 @@ namespace ShopAtHome.UnitTestHelper
             _targetConstructor = targetCtors.Where(x => x.GetParameters().Length > 0).FirstOrDefault() ?? targetCtors.FirstOrDefault();
             if (_targetConstructor == null)
             {
-                // TODO: Need to be able to use constructors with concrete types, only throw if we can't auto-mock an un-filled dependency
-                // Probably means we need to pick a ctor to use at the end... Maybe take a page out of depedency injection container book
                 throw new InvalidOperationException($"Cannot construct type {tType.FullName} because it has no public constructors");
             }
             _constructorParameters = new List<object>();
@@ -100,6 +105,7 @@ namespace ShopAtHome.UnitTestHelper
             var paramType = parameter.GetType();
             if (_filledParamTypes.Contains(paramType))
             {
+                // TODO: What if a constructor has more than one dependency of the same type? seems like it could be a legitimate use case
                 throw new InvalidOperationException($"Already using a {paramType.FullName} to build this object!");
             }
 
@@ -147,7 +153,14 @@ namespace ShopAtHome.UnitTestHelper
 
             foreach (var parameterType in remainingParameters)
             {
-                _constructorParameters.Add(mockMaker.MakeGenericMethod(parameterType).Invoke(null, null));
+                if (parameterType.IsPrimitive)
+                {
+                    _constructorParameters.Add(Stubs.GetPrimitiveDefault(parameterType));
+                }
+                else
+                {
+                    _constructorParameters.Add(mockMaker.MakeGenericMethod(parameterType).Invoke(null, null));
+                }
             }
 
             return this;
