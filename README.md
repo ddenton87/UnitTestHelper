@@ -1,14 +1,14 @@
-#API Documentation
-##Test Data
+# API Documentation
+## Test Data
 The API for generating test data has two components: the TestData static class, and the TestDataBuilder fluent interface.
 
-###Generating Random Value Types
+### Generating Random Value Types
 The static TestData class exposes specific methods that return randomized value-type data. This API should be self-discoverable, but here is an example:
 
 	using ShopAtHome.UnitTestHelper;
 	var randomNumber = TestData.RandomNumber(9, 99); // Optional params for bounding the result
 	var randomString = TestData.RandomString(); // A new unicode string
-###Generating Random Complex Types
+### Generating Random Complex Types
 The library uses GenFu (https://github.com/MisterJames/GenFu)  internally to populate object properties. You can specify specific properties that you want to have pre-determined values.  This functionality is useful because it allows to ensure that your specific testing conditions are enforced, while still checking your methods for cases outside of uninitialized object values. The builder class is implicitly convertible to the underlying T.
 	
 	using ShopAtHome.UnitTestHelper;
@@ -19,7 +19,7 @@ The library uses GenFu (https://github.com/MisterJames/GenFu)  internally to pop
 		example.Foo = 24;
 		example.Bar = "Hello world!";
 	});
-###Mocking Dependencies
+## Mocking Dependencies
 When testing class functionality, it is important that dependencies of that class are mocked so that their behavior can be controlled during test scenarios. Frequently, this is accomplished by creating mocks of the dependent interfaces using a library like Moq or Telerik's JustMock, and newing-up your class under test, like so:
 
 	var mockDAL = Mock.Create<IDAL>();
